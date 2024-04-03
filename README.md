@@ -1,4 +1,3 @@
-
  Database Fundamentals :-
 
  What is Database ?
@@ -1814,6 +1813,14 @@ char :-
    l left outer join
    2 right outer join
    3 full outer join
+
+  EMP					DEPT
+  EMPNO  ENAME  SAL  DEPTNO		DEPTNO DNAME 	LOC
+  1	 A	5    10			10     ACCT  	HYD
+  2	 B	4    20			20     RESEARCH	
+  3	 C	3    30			30     SALES
+  4	 D	4    10			40     OPERATIONS => unmatched
+  5	 E	3    NULL => unmatched 
 
   left outer join :- 
 
@@ -4414,1105 +4421,1067 @@ END;
  1 system defined
  2 user defined 
 
+ system defined :- 
+
+1  zero_divide :- 
+
+ => raised when we try to divide a number with 0
  
+  a := &a; 10
+  b := &b; 0
+  c := a/b; => zero_divide
+
+ 2 value_error :- 
+
+ => raised when variable datatype or size mismatches.
+
+ 1        x  number(4);
+          x := &x; => 10000  => value_error
+
+ 2        x number(4);
+          x := &x; => 'abc'  => value_error
+
+ 3 invalid_number :- 
+
+ => raised when we perform invalid calculation.
+
+      d   date;
+      d := '01-JAN-20' + 10 ; =>  invalid_number
+
+ 4 no_data_found :- 
+
+ => raised when data not found in the table
+
+        veno := &empno; =>  9090
+        select sal into vsal 
+              from emp where empno=veno; => no_data_found
+
+  5 dup_val_on_index :- 
+
+  => raised when we try to insert duplicate value into primary key
+
+      create table x(x number(2) primary key);
+      insert into x values(10);
+      insert into x values(10); => dup_val_on_index 
+
+ Example :- 
+
+1
+
+  DECLARE
+   a number(3);
+   b number(3);
+   c number(3);
+ BEGIN
+   a := &a;  
+   b := &b; 
+   c := a/b;
+   dbms_output.put_line(c);
+ EXCEPTION
+    when zero_divide then
+       dbms_output.put_line('divisor cannot be zero');
+    when value_error then
+       dbms_output.put_line('value exceeding size');
+ END;
+  /
+
+ 2
+
+   write a prog to input empno and print name & salary ? 
+
+  DECLARE
+    veno  emp.empno%type;
+    vename emp.ename%type;
+    vsal   emp.sal%type;
+  BEGIN
+     veno := &empno;
+     SELECT ename,sal INTO vename,vsal 
+                        FROM emp WHERE empno=veno;
+     dbms_output.put_line(vename||' '||vsal);
+  EXCEPTION
+    when no_data_found then
+        dbms_output.put_line('employee not exists');
+    when value_error then
+        dbms_output.put_line('number exceeding size');
+  END;
+    /
+
+ SQLCODE,SQLERRM  :- 
+
+ SQLCODE  => returns error code
+ SQLERRM  => returns error message
+
+ => if any exception raised then code will passed to SQLCODE
+  and message will be passed to SQLERRM.
+
+Example :- 
+
+  CREATE TABLE emp88
+    (
+     empno number(4) primary key ,
+     ename varchar2(10) not null,
+     sal   number(7,2) check(sal>=3000)
+    );
+
+  write a prog to insert data into emp88 table ?
+
+  DECLARE
+    veno   emp88.empno%type;
+    vename  emp88.ename%type;
+    vsal    emp88.sal%type;
+ BEGIN 
+    veno := &empno;
+    vename := '&ename';
+    vsal   := &sal;
+    INSERT INTO emp88 VALUES(veno,vename,vsal);
+    COMMIT; 
+ EXCEPTION
+    when dup_val_on_index then
+        dbms_output.put_line('empno cannot be duplicated');
+    when others then 
+        if sqlcode = -2290 then
+          dbms_output.put_line('sal>=3000');
+        end if;
+ END;
+  /
+
+ user defined exceptions :- 
+
+ => exceptions declared by user are called user defined exceptions
+
+ => when predefined exceptions are not meeting our requirements
+    then we define our own exceptions called user defined
+    exception.
+
+ => user defined exceptions are raised by using 
+
+ 1 RAISE statement
+ 2 RAISE_APPLICATION_ERROR
+
+ using RAISE statement :- 
  
+     syn :-  RAISE <exception-name> ;
+     ex  :-  RAISE abc;
+ 
+ => exception "abc" must be declared in declaration section 
+    as follows 
+  
+          abc  exception;
+ 
+ Example :- 
 
+ DECLARE
+   a number(3);
+   b number(3);
+   c number(3);
+   abc exception;
+ BEGIN
+   a := &a;  
+   b := &b; 
+   if b=1 then
+     raise abc;
+   end if;
+   c := a/b;
+   dbms_output.put_line(c);
+ EXCEPTION
+    when zero_divide then
+       dbms_output.put_line('divisor cannot be zero');
+    when value_error then
+       dbms_output.put_line('value exceeding size');
+    when abc then
+       dbms_output.put_line('divisor cannot be one');
+ END;
+  /
 
+ using raise_application_error :- 
 
+  raise_application_error(error code,error msg);
+
+  error code => -20001 to -20999
+  error msg  => any text
+ 
+  diff b/w raise & raise_application_error ? 
+
+ => in raise statement exception is raised by using name
+
+ => in raise_application_error exception is raised by using code
+
+ => use raise statement to raise exception and to handle exception
+
+ => use raise_application_error to raise exception and do not 
+    want to handle.
+
+   write a prog to increment specific employee sal by specific
+   amount and sunday updates are not allowed ?
+
+   DECLARE
+     veno  emp.empno%type;
+     vamt  number(4);
+   BEGIN
+     veno := &empno;
+     vamt := &amount;
+     IF TO_CHAR(sysdate,'dy')='sun' THEN
+         RAISE_APPLICATION_ERROR(-20001,'sunday not allowed');
+     END IF;     
+     UPDATE emp SET sal=sal+vamt WHERE empno=veno;
+     COMMIT;
+   END;
+    /
+
+  Named PL/SQL blocks :- 
+
+  1 procedures
+  2 functions
+  3 packages
+  4 triggers 
+
+  sub-programs :- 
+
+  1 procedures
+  2 functions 
+
+  Advantages :- 
+
+  1 modular programming :- 
+
+  => with the help of procedures & functions a big program can
+  be divided into small modules 
+
+  2 reusability :- 
+
+  => proc & func can be centralized i.e. stored in db.so 
+     applications which are connected to db can reuse these
+     proc & func.
+
+ 3 security :- 
+
+  => because proc & func are stored in database , so they are
+     secured only authorized users can execute these programs.
+
+ 4 invoked from front-end applications :- 
+ 
+  => proc & func can be called from front-end applications like
+    java,.net,php etc.
+
+ 5 improves performance :- 
+
+ => proc & func improves performance because they are precompiled.
+    i.e. compiled already and ready for execution. when we 
+    create a procedure the program is compiled and stored in
+    db and everytime we call the procedure only execution is
+    repeated but compilation is not repeated.
+
+  procedures :- 
+
+ => a procedure is a named PL/SQL block that accepts some
+    input and performs some action on database and may or
+    may not returns a value.
+
+ => procedures are created to perform one or more dml operations
+    on database.
+
+ => procedures are 2 types 
+
+   1 standalone or stored procedures
+   2 packaged procedures
+
+ 1 standalone or stored procedures :- 
+
+ => these procedures are stored as seperate object in database.
+ => these programs are created directly under schema.
+ 
+   CREATE OR REPLACE
+        PROCEDURE <name>(parameters if any) 
+   IS
+     <declaration-part>;
+   BEGIN
+      <execution-part>;
+   END;
+    /
+
+  parameters :- 
+
+ => we can declare parameters and we can pass values to parameters
+ => parameters are 2 types 
+  
+       1  formal
+       2  actual 
+
+ => parameters declared while creating procedure are called formal.
+ => parameters used while calling procedure are called actual.
+ => formal parameters are again 3 types 
+
+  1 IN
+  2 OUT
+  3 IN OUT
+
+ IN :- 
+ 
+  => always recieves value
+  => default
+  => read only
+
+ OUT :- 
+
+  => always sends value
+  => write only 
+
+ IN OUT :- 
+
+ => recieves and sends value
+ => read & write
+
+ create a procedure to increment specific employee sal by  
+ specific amount ?
+
+ CREATE OR REPLACE PROCEDURE update_salary
+ (
+    p_eno in number,   
+    p_amt in number
+ )
+ IS
+ BEGIN
+    UPDATE emp SET sal=sal+p_amt WHERE empno=p_eno;
+    COMMIT;
+ END;
+   /
+
+ procedure created (compiled + stored in db)
+
+ Execution :- 
+
+ 1 from sql prompt
+ 2 from another pl/sql block
+ 3 front-end applications
+
+ Executing from SQL prompt :- 
+
+ SQL>EXECUTE update_salary(100,1000);
+
+ Executing from another pl/sql block :- 
+
+ 1 positional notation
+ 2 named notation 
+
+ 1 positional notation :- 
+
+ => in positional notation parameters are mapped through positions
+
+   ex :-  procedure  :-   update_salary(p_eno  , p_amt)
+
+          calling    :-   update_salary(100,1000);
+
+2 Named notation :- 
+
+ => in named notation parameters are mapped through names by 
+    using => operator.
+
+              formal => actual
+
+   ex :- procedure :-  update_salary(p_eno,p_amt)
+
+         calling  :- update_salary(p_eno=>100,p_amt=>1000)
+                     update_salary(p_amt=>1000,p_eno=>100)
+
+ =>  named notation is convenient than positional notation.
+     because in named notation parameters can be passed in
+     any order.
+
+ Example :- 
+
+ positional notation :- 
+
+ DECLARE
+   veno  emp.empno%type;
+   vamt  number(4);
+ BEGIN
+   veno := &empno;
+   vamt := &amount;
+   update_salary(veno,vamt);
+ END;
+  /
+
+ named notation :- 
+
+DECLARE
+   veno  emp.empno%type;
+   vamt  number(4);
+ BEGIN
+   veno := &empno;
+   vamt := &amount;
+   update_salary(p_eno=>veno,p_amt=>vamt);
+ END;
+  /
+
+out parameter example :- 
+
+=> create procedure to increment specific employee sal by 
+ specific amount ? after increment send the updated sal to
+ calling program ?
+
+ CREATE OR REPLACE PROCEDURE update_salary
+ (
+    p_eno in number,   
+    p_amt in number,
+    p_sal out number
+ )
+ IS
+ BEGIN
+    UPDATE emp SET sal=sal+p_amt WHERE empno=p_eno;
+    COMMIT;
+    SELECT sal INTO p_sal FROM emp WHERE empno=p_eno;
+ END;
+   /
+
+ Execution :- 
+
+ DECLARE
+   veno  emp.empno%type;
+   vamt  number(4);
+   vsal  emp.sal%type;
+ BEGIN
+   veno := &empno;
+   vamt := &amount;
+   update_salary(veno,vamt,vsal);  /* 
+                                    update_salary(p_eno=>veno,
+                                                  p_amt=>vamt,
+                                                   p_sal=>vsal)
+                                   */
+   dbms_output.put_line(vsal);
+ END;
+  /
+
+Executing from sql prompt :- 
+
+ SQL>VARIABLE K NUMBER ;
+
+ SQL> EXECUTE update_salary(100,1000,:K);
+ 
+ SQL>PRINT :K 
+
+    7000
+
+ Example 3 :- 
+
+  create table emp88
+    (
+     empno number(4) primary key,
+     ename varchar2(10) not null,
+     sal  number(7,2) check(sal>=3000)
+    );
+
+ create a procedure to insert record into emp88 table ?
+ if any exception raises then send error message to 
+ calling program ?
+
+ CREATE OR REPLACE PROCEDURE insert_emp88
+ (
+   p_eno  in number,
+   p_name in varchar2,
+   p_sal  in number,
+   p_msg  out varchar2
+ )
+ IS
+ BEGIN
+   INSERT INTO emp88 VALUES(p_eno,p_name,p_sal);
+   COMMIT;
+   p_msg := 'record inserted successfully'; 
+ EXCEPTION
+   WHEN OTHERS THEN
+     p_msg :=  SQLERRM;
+ END;
+  /
+      
+ user defined functions :- 
+
+ => functions created by user are called user defined functions.
+
+ => when predefined functions not meeting our requirements then
+   we create our own functions called user defined functions.
+
+ => a function is also a named PL/SQL block that accepts some
+   input and performs some calculation and must return a value.
+
+  CREATE OR REPLACE 
+      FUNCTION <name>(parameters if any) RETURN <type>
+ IS
+   <declaration-part>;
+ BEGIN
+    <execution-part>;
+    RETURN <expr>;
+ END;
+ /
+
+Example :-
+
+ CREATE OR REPLACE 
+     FUNCTION CALC(a number,b number,op char) RETURN number
+ IS
+ BEGIN
+    if op='+' then
+       return(a+b);
+    elsif op='-' then
+       return(a-b);
+    elsif op='*' then
+       return(a*b);
+    else
+       return(a/b);
+    end if;
+ END;
+ /
+
+ function created (compiled + stored in db)
+
+ Execution :- 
+
+ 1 sql commands
+ 2 another pl/sql block
+ 3 front-end application
+
+ executing from sql command :-
+
+ SQL>SELECT calc(10,20,'*') FROM DUAL ; => 200
+
+ executing from another pl/sql block :- 
+
+ DECLARE 
+  x number(3);
+  y number(3);
+  z number(4);
+ BEGIN
+   x := &x;
+   y := &y;
+   z := calc(x,y,'*');  
+   dbms_output.put_line(z);
+ END;
+  /
+
+ create a function to check whether given year is leap year or
+ not ? 
+
+ create or replace 
+   function is_leap(y number) return varchar2
+ is
+ d date;
+ begin
+    d := '29-FEB-'||y;
+    RETURN 'leap year';
+ exception
+    when others then
+       RETURN 'not a leap year'; 
+ end;
+ /
+
+ execution :- 
+
+ SQL>SELECT is_leap(2020) FROM DUAL ;
+ 
+		
+ SQL>SELECT ENAME,
+           IS_LEAP(TO_CHAR(HIREDATE,'YYYY')) AS LEAP 
+     FROM EMP ;
+
+ 
+ create a function to check whether accounts exists or not ?
+
+ ACCOUNTS
+ ACCNO   BAL
+ 100     10000
+ 101     20000
    
+ create or replace 
+       function check_acct(a number) return boolean
+ is
+  cnt number;
+ begin
+   select count(*) into cnt from accounts where accno=a;
+   if cnt=1 then
+     return true;
+   else
+     return false;
+   end if;
+ end;
+  /
 
+ NOTE :- if function return type is boolean then it cannot be
+ executed from sql commands and must be executed from another
+ pl/sql block or front-end applications.
 
+ create a function that accepts accno and returns balance ?
 
+ create or replace 
+    function getBalance(a number) return number
+ is
+  vbal number;
+ begin
+   select bal into vbal from accounts where accno=a;
+   return vbal;
+ end;
+  /
 
- 
- 
+ create a procedure for money withdrawl ? 
 
+ create or replace 
+     procedure debit(a number,amt number) 
+ is
+ begin
+    /* check account exists or not */
+     if check_acct(a)=false then
+        raise_application_error(-20001,'account does not exists');
+     end if;
+    /* check balance is sufficient or not */
+     if amt > getBalance(a) then 
+         raise_application_error(-20002,'insufficient balance');
+     end if;
+     update accounts set bal=bal-amt where accno=a;
+     commit;
+ end;
+  /
 
+ create procedure for money deposit ?
 
+ create a procedure for money transfer ? 
 
+ Question :- 
 
+   diff b/w procedures and functions ?
 
+       procedures                  functions 
 
+  1  may or may not returns       must return a value
+     a value
 
+  2  can return multiple values   returns only one value
 
+  3  returns values using OUT     returns value using return
+     parameter                     statement
 
+  4  cannot be executed from      can be executed from sql 
+     sql commands                   commands
 
+  5  created to perform           created for select operation
+       dml operations
 
+  6 create procedure to           create function to get balance
+    update balance
 
+  USER_SOURCE :- table that stores procedures and functions
+                 created by user
+
+   NAME          TYPE         LINE         TEXT
+   getBalance    function     1            create or replace
+    "             "           2              function getBalance(a number) return number
+                              3            is
+                              4             vbal number;
+                              5            begin
+
+  display list of procedures and functions ?
+
+  SQL>SELECT DISTINCT name,type  
+      FROM user_source  
+      ORDER BY type asc ; 
   
- 
+  display update_salary procedure code ? 
 
+  SQL>SELECT text
+      FROM user_source
+      WHERE name='UPDATE_SALARY' ;
 
+  packages :- 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
- 
-
- 
- 
-
-
-
-
-
-
-
+  => a package is a collection of procedures,functions,variables,
+     cursors etc
+  => related procedures & functions are grouped into one package.
   
+ Advantages :- 
 
+ 1 easy to manage :- because related procedures & functions
+   are available in single package.so managing is easy.
 
+ 2 supports overloading :- 
 
+ => standalone procedures/functions doesn't support overloading
+    but packaged procedures/functions supports overloading.
+    Inside the package we can define two or more procedures/
+    functions with same name with different parameters.
 
+ 3 supports hiding :- 
 
+ => in package we can make proc/func as public and private.
+    public members can be called from anywhere but private
+    members can be called within package.
 
+4 improves performance :- 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+ => when application requests for a proc/func in a package then
+    oracle not only loads requested member but complete package
+    loaded into memory. so next request will not go to db. so
+    no of requests going to db are reduced and performance is
+    improved.
 
  
+ => a package contains two parts 
 
+  1 package specification
+  2 package body 
+
+ package specification :- 
+
+ => package specification contains declarations of procedures
+  and functions.
+
+  CREATE OR REPLACE PACKAGE <NAME>
+  AS
+  PROCEDURE DECLARATION ;
+  FUNCTION DECLARATION;
+  END;
+  /
+ 
+ package body :- 
+
+ => package body contains definition of procedures & functions.
+
+ CREATE OR REPLACE PACKAGE BODY <NAME>
+ AS
+ PROCEDURE DEFINITION ;
+ FUNCTION DEFINITION;
+ END;
+  /
+
+ create a package to implement various bank transactions ?
+
+1  account opening (proc)
+2  account closing (proc)
+3  balance enquiry (function)
+4  money deposit   (proc)
+5  money withdrawl (proc)
+6  money transfer  (proc)
+
+ ACCOUNTS
+ ACCNO  NAME  BAL
+ 100	      10000
+
+ TRANSACTIONS
+ TRID   TTYPE  TDATE   TAMT   ACCNO
+
+ CREATE SEQUENCE S10
+ START WITH 1
+ INCREMENT BY 1
+ MAXVALUE 99999
+
+ package specification :- 
+
+ create or replace package bank
+ as
+ procedure new_acct(a number,n varchar2,b number);
+ procedure close_acct(a number);
+ function getBalance(a number) return number;
+ procedure credit(a number,amt number);
+ procedure debit(a number,amt number);
+ end;
+  /
+
+ package body :- 
+
+ create or replace package body bank 
+ as
+ procedure new_acct(a number,n varchar2,b number)
+ is
+ begin
+  insert into accounts values(a,n,b);
+  commit;
+ end new_acct;
+ procedure close_acct(a number)
+ is
+ begin
+   delete from accounts where accno=a;
+   commit;
+ end close_acct;
+ function getBalance(a number) return number
+ is
+ vbal number;
+ begin
+   select bal into vbal from accounts where accno=a;
+   return vbal;
+ end getBalance;
+ procedure credit(a number,amt number)
+ is
+ vtrid number;
+ begin
+   update accounts set bal=bal+amt where accno=a;   
+   vtrid := s10.nextval;
+   insert into transactions values(vtrid,'D',sysdate,amt,a);
+   commit;
+ end credit;
+ procedure debit(a number,amt number)
+ is
+ vtrid number;
+ vbal  number;
+ begin
+   vbal := getBalance(a);
+   if amt > vbal then
+       raise_application_error(-20001,'insufficient balance');
+   end if;
+   update accounts set bal=bal-amt where accno=a;   
+   vtrid := s10.nextval;
+   insert into transactions values(vtrid,'W',sysdate,amt,a);
+   commit;
+ end debit;
+end;
+ /
+ 
+ Execution :- 
+
+ => the whole package cannot be executed only the members of the
+ package can be executed.
+
+=> members of the package are invoked as follows
+
+     PACKAGENAME.MEMBER(parameters)
+
+  1  calling new_acct proc :-
+
+  SQL>EXECUTE BANK.NEW_ACCT(100,'A',4000);
+
+ 2  calling credit proc :-
   
+   SQL>EXECUTE BANK.CREDIT(100,5000);
 
+ 3  calling debit proc :-
 
+    SQL>EXECUTE BANK.DEBIT(100,3000);
 
+ Example 2 :- 
 
+ create package to implement following operations 
 
+ 1 hire employee (proc)
+ 2 fire employee (proc)
+ 3 update salary (proc)
+ 4 update job    (proc)
+ 5 calculate experience (function)
+ 6 to get top N employees (function)
+
+ droping package :- 
+
+ SQL>DROP PACKAGE BANK ; => drops both specification & body
+ SQL>DROP PACKAGE BODY BANK ; => drops only body 
+
+ TRIGGERS :- 
+
+  => trigger is also a named PL/SQL block like procedure but
+    executed implicitly by oracle whenever user submits DML/DDL
+    commands.
+
+ =>  triggers are created  
+
+  1 to control dmls.
+  2 to enforce complex rules and validations.
+  3 for auditing dml/ddl operations
+  4 to maintain replicas
+  5 to generate values for primary key columns 
   
-     
-     
+  CREATE OR REPLACE TRIGGER <NAME>
+  BEFORE / AFTER INSERT OR UPDATE OR DELETE
+  ON <TABNAME>
+  [FOR EACH ROW]
+  [
+    DECLARE
+     variables;
+  ]
+  BEGIN    
+     STATEMENTS;
+  END;
+  /
 
+ Before triggers :- 
+
+ => if trigger is before , then first oracle executes trigger then
+    oracle executes DML.
+
+   1 TRIGGER
+   2 DML
+
+ after triggers :- 
+
+ => if trigger is after then first oracle executes DML then oracle
+  executes trigger.
+
+  1 DML
+  2 TRIGGER
+
+ Trigger Level :- 
+
+ 1  statement level (default)
+ 2  row level 
+
+ statement level :- 
+
+ => statement level triggers are executed once per the statement
+
+ row level :- 
+
+ => row level triggers are executed once per the row affected by 
+    dml.
+
+ create trigger to not to allow dml operations on emp table on 
+ sunday ?
+
+ create or replace trigger t1
+ before insert or update or delete
+ on emp
+ begin
+    if to_char(sysdate,'dy')='sun' then
+        raise_application_error(-20001,'sunday not allowed');
+    end if;
+ end;
+ /
+
+create trigger to not to allow dmls as follows ?
+
+    mon - fri  <10am and >4pm
+    sat        <10am and >2pm
+    sun        --------------
+
+  create or replace trigger t2
+  before insert or update or delete
+  on emp
+  begin
+      if to_char(sysdate,'d')  between 2 and 6
+         and
+         to_char(sysdate,'hh24') not between 10 and 16  then
+             raise_application_error(-20001,'only between 10am and 4pm');
+      elsif to_char(sysdate,'dy')='sat'
+            and
+            to_char(sysdate,'hh24') not between 10 and 14 then
+               raise_application_error(-20001,'only between 10am and 2pm');
+      elsif  to_char(sysdate,'dy')='sun' then
+                raise_application_error(-20001,'sunday not allowed');
+      end if;
+  end;
+ /
  
+ :NEW,:OLD variables :- 
 
+ => these two variables are called bind variables.
 
+ => using these two variables we can access data affected by dml
+    inside the trigger. 
 
+=> record user is trying to insert is copied to :NEW variable
 
+ INSERT INTO EMP(EMPNO,ENAME,JOB,SAL) 
+                 VALUES(121,'abc','clerk',4000)    => :NEW
+  :NEW
+  EMPNO  ENAME  JOB    SAL
+  121    abc    clerk  4000
 
+=> record user is trying to delete is copied to :OLD variable.
 
+  DELETE FROM emp WHERE empno=101  => :OLD
 
+  :OLD
+  EMPNO  ENAME   JOB  		SAL
+  101    ALLEN  SALESMAN	1600
 
+ => record user is trying to update is copied to :NEW,:OLD
+   variables.
 
+   EMPNO   SAL
+   100     2000
 
+   UPDATE EMP SET SAL=3000 WHERE EMPNO=100 => :OLD, :NEW variables
 
+   :OLD
+   EMPNO   SAL
+   100     2000
 
-   
+   :NEW
+   EMPNO   SAL
+   100     3000
 
+  => these two variables are allowed only in row level triggers
+     but not allowed in statement level triggers.
 
-  mod(10,2) => 0 
+  create trigger to not to allow to decrement employee salary ?
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  CREATE OR REPLACE TRIGGER T3
+  BEFORE UPDATE 
+  ON EMP
+  FOR EACH ROW
+  BEGIN
+  IF :NEW.SAL < :OLD.SAL THEN
+        RAISE_APPLICATION_ERROR(-20001,'sal cannot be decremented');
+  END IF;
+ END;
+  /     
  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ create trigger to insert details into emp_resign when
+ employee resigns from organization ?
  
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
- 
-
-
-
-
-
-
-
-
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-			
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
- 
- 
- 
-  
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                     
+  EMP_RESIGN
+  EMPNO  ENAME   HIREDATE  DOR
+
+  CREATE TABLE EMP_RESIGN
+  (
+    EMPNO  NUMBER(4),
+    ENAME  VARCHAR2(10),
+    HIREDATE DATE,
+    DOR   DATE);
+
+ CREATE OR REPLACE TRIGGER T4
+ AFTER DELETE
+ ON EMP
+ FOR EACH ROW
+ BEGIN
+   INSERT INTO EMP_RESIGN VALUES(:OLD.EMPNO,:OLD.ENAME,
+                                 :OLD.HIREDATE,SYSDATE);
+ END;
+ /
+
+ USER_TRIGGERS :- 
+
+ => system table or data dictionary table that stores information
+    about triggers created by user.
+
+	SELECT TRIGGER_NAME,TRIGGER_TYPE,TRIGGERING_EVENT
+	FROM USER_TRIGGERS
+	WHERE TABLE_NAME='EMP' ;
+
+ Droping trigger :- 
+
+  SQL>DROP TRIGGER T1;
+
+ => if table is dropped then triggers created on table are also
+   dropped.
+
+ DATABASE
+      BATCH2PM 
+          TABLES
+              ROWS & COLS
+              CONSTRAINTS
+              INDEXES
+              TRIGGERS
+          VIEWS
+          SYNONYMS
+          SEQUENCES
+          PROCEDURES
+          FUNCTIONS
+          PACKAGES
     
 
+ NVL() :- function used to convert null values.
 
+       NVL(arg1,arg2)
 
+       if arg1 = null returns arg2
+       if arg1 <> null returns arg1 only
 
+    NVL(100,200)      => 100
+    NVL(NULL,200)     => 200
 
+    display ENAME,SAL,COMM,TOTSAL ?
 
+      TOTSAL = SAL + COMM 
 
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-   
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-  
-
-
- 
-
- 
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-   
-
-
-
-  
-
- 
-
-
-
-
-
-
-
-
-
-
-    
-
- 
-    
- 
-
-   
-   
-
-
-
-
-
-
-
-
-
-  
-
- 
- 
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
- 
- 
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
- 
-
- 
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-  
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-  
- 
-   
-
-
-
-
-
-
-  
-
-
-
-
- 
-
-
-
-
-
- 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
- 
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-  
-  
-
-
-
-
- 
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
- 
-
-
- 
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
-
-
-
-
-
-
-
-
-    
-  
-
-
-
-
-
-
-
-
-
-   
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-  
-
-
-
-
-
-
-
-
-
- 
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-  
-
- 
-
-
-
-
-
-
-
-
-
-     
-
-
-
-
-
-
-
-
-
-
-
- 
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
- 
-  
-        
-
- 
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-                          
-
-
-
-
-
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
- 
-
-
-
-
- 
-
-
-
-
-
- 
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
+    SELECT ENAME,SAL,COMM,SAL+NVL(COMM,0) AS TOTSAL FROM EMP 
